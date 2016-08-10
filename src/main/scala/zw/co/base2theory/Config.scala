@@ -19,8 +19,14 @@ object Config{
         val userAgent  = UserAgent.Default
     }
     object Database{
-        //application.conf config entry
-        val configEntry: String = "scraper"
+        //driver
+        val driver: String = "org.sqlite.JDBC"
+        //path to db 
+        val dbFile = "entries.db"
+        //url
+        val url: String = "jdbc:sqlite:./"+dbFile
+        //profile
+        val profile = slick.driver.SQLiteDriver
     }
 }
     

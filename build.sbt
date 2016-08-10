@@ -11,7 +11,8 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 //libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.3.11"
 libraryDependencies ++= Seq(
   "com.typesafe.slick" %% "slick" % "3.0.0",
-  "org.slf4j" % "slf4j-nop" % "1.6.4"
+  "org.slf4j" % "slf4j-nop" % "1.6.4",
+  "org.xerial" % "sqlite-jdbc" % "3.8.11.2"
 )
 
 

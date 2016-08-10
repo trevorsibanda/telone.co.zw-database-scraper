@@ -72,20 +72,55 @@ object ScrapedPage{
 object Scraper {
     import zw.co.base2theory.config._
     def main(args: Array[String]): Unit = {
+        import Config.Database.profile.api._
+        import scala.concurrent.Await
+        import scala.concurrent.duration._
+        println("[=] Telone directory scraper ")
+        println("[-] Connecting to local database....")
+        val db = Database.forURL( Config.Database.url , Config.Database.driver )
+        def exec[T]( a: DBIO[T] , d: Int = 10): T = Await.result( db.run(a) , d seconds)
+        
+        val tblentry = TableQuery[EntryTable]
+        val tblcity  = TableQuery[CityTable]
+        //create schema
+        
+        try{
+            val existingEntries: Int = exec( tblentry.length.result )
+            val existingCities: Int = exec( tblcity.length.result )
+            println(s"[=] Database already exists, found ${existingEntries} directory entries ")
+            println(s"[=]                                ${existingCities} cities ")
+        }catch{
+            case e: java.sql.SQLException  => {
+                println("[=] Creating schema")
+                exec( (tblentry.schema ++ tblcity.schema).create )
+                println("[=] Successfully created schema")
+            }
+            case _: Throwable => println("[!] Unknown exception whilst creating schema"); System.exit(0)
+        }
         println("[+] Accessing start page: \t " + Config.Scraper.startPageUrl.get )
         val startPage =  HtmlPage( Request( Url(Config.Scraper.startPageUrl.get) ) )
         println("[-] Scraping start page")
         val scrapedStart = new ScrapedStartPage(startPage)
         println(s"[+] Found  ${scrapedStart.cities.getOrElse(Seq()).length} cities in this database ")
-        
+        try{
+            println("[=] Deleting all entries from database ")
+            exec( tblcity.delete )
+            println("[+] Adding extract cities to database  ")
+            exec( tblcity ++= scrapedStart.cities.getOrElse(Seq()).map{ new City(_,None) } )
+            println("[+] Added cities to database")
+        }
         val start = scrape( Config.Scraper.searchStartPageUrl , Config.Scraper.initHeaders , Config.Scraper.initCookies , Config.Scraper.userAgent  )
         //loop through entire database and run
         val entries = Range(1,start.maxPages+1).map{ i => {
                 val scraped = scrape( ScrapedPage.pageUrl(i) , Config.Scraper.initHeaders , Config.Scraper.initCookies , Config.Scraper.userAgent  )
-                scraped.entries.get.map{
+                val entries = scraped.entries.get
+                entries.map{
                     entry => println(s"${entry.name}\t ${entry.city}\t ${entry.fq_telnumber}")
                 }
-                scraped.entries.get
+                val insert = tblentry ++= entries
+                println("[=] Saving entries to database")
+                val res = exec( insert , 120 )
+                println(s"[*] Saved ${res} entries to database")
             }
         }
         /*

@@ -11,6 +11,7 @@ target/
 lib_managed/
 src_managed/
 project/boot/
+project/.sbtserver/*
 project/plugins/project/
 RUNNING_PID
 # Scala-IDE specific
