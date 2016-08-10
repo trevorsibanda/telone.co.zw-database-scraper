@@ -6,7 +6,14 @@ trait Resource{
     def mime: String
 }
 
-case class HtmlPage(override val url: String , override val data : String ) extends Resource{
+abstract class HtmlPage(override val url: String , override val data : String ) extends Resource{
     def code = data
     def mime = "text/html"
+    def request: Request
+}
+
+object HtmlPage{
+    def apply( r: Request ): HtmlPage = new HtmlPage(  r.url.get , r.data ){
+        def request: Request = r
+    }
 }
